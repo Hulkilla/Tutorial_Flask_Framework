@@ -1,6 +1,30 @@
-from flask import Flask, render_template, request, redirect, url_for
-
+from flask import Flask, render_template, request, redirect, url_for, jsonify
+# pip install flask-mysqldb --> para tratar con bbdd dentro de la app
+from flask_mysqldb import MySQL
 app = Flask(__name__)
+
+# Conexión MySQL
+app.config['MYSQL_HOST'] = 'localhost' 
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = 'Cuatro4444'
+app.config['MYSQL_DB'] = 'fermentation'
+# Igual puedo conectarme a mis tablas
+try: 
+    conexion = MySQL(app) #Conexión entre la bbdd y la app
+    print("Conexión correcta a la bbdd")
+except:
+    print("No se ha conectado a la bbdd")
+
+@app.before_request
+def before_request():
+    print("Antes de la petición")
+#Acción antes de la petición
+
+@app.after_request
+def after_request(response):
+    print("Despues de la petición")
+    return response
+#Acción después de la petición
 
 @app.route("/")
 def index():
@@ -32,10 +56,25 @@ def query_string():
     print(request.args.get("param2"))
     return "todo"
 
+@app.route('/cursos')
+def listar_cursos():
+    data={}
+    try:
+        cursor=conexion.connection.cursor()
+        sql = "SELECT * FROM fermentation.substrato"
+        cursor.execute(sql)
+        cursos=cursor.fetchall()
+        data['cursos']=cursos
+        data['mensaje'] = 'Exito'
+    except Exception as ex:
+        data['mensaje']=f'Error: {ex}'
+    return jsonify(data)
+
 
 def pagina_no_encontrada(error):
     # return render_template('404.html'), 404
     return redirect(url_for('index'))
+    ## Aqui tenemos dos opciones, o una página de error o redirigir a la pagina principal
 
 if __name__=='__main__':
     app.add_url_rule('/query_string', view_func=query_string)
